@@ -1,3 +1,4 @@
+<% require 'date' %>
 ---
 driver:
   name: vagrant
@@ -13,14 +14,9 @@ verifier:
   name: inspec
 
 platforms:
-  - name: ubuntu-16.04
-  - name: centos-7
+  - name: windows-2012
 
 suites:
   - name: default
     run_list:
-      - recipe[windows_route::default]
-    verifier:
-      inspec_tests:
-        - test/integration/default
-    attributes:
+      - recipe[test::default]
