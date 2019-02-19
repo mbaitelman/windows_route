@@ -17,43 +17,35 @@
 # limitations under the License.
 #
 
-require "chef/resource"
+provides :windows_route, os: "windows"
 
-class Chef
-  class Resource
-    class Windows_Route < Chef::
-      provides :windows_route, os: "windows"
+default_action :add
+allowed_actions :add, :delete
 
-      default_action :add
-      allowed_actions :add, :delete
+description "Use the route resource to manage the system routing table in a Linux environment."
 
-      description "Use the route resource to manage the system routing table in a Linux environment."
+property :target, String,
+          description: "The IP address of the target route.",
+          identity: true, name_property: true
 
-      property :target, String,
-               description: "The IP address of the target route.",
-               identity: true, name_property: true
+property :comment, [String, nil],
+          description: "Add a comment for the route.",
+          introduced: "14.0"
 
-      property :comment, [String, nil],
-               description: "Add a comment for the route.",
-               introduced: "14.0"
+property :metric, [Integer, nil],
+          description: "The route metric value."
 
-      property :metric, [Integer, nil],
-               description: "The route metric value."
+property :netmask, [String, nil],
+          description: "The decimal representation of the network mask. For example: 255.255.255.0."
 
-      property :netmask, [String, nil],
-               description: "The decimal representation of the network mask. For example: 255.255.255.0."
+property :gateway, [String, nil],
+          description: "The gateway for the route."
 
-      property :gateway, [String, nil],
-               description: "The gateway for the route."
+property :device, [String, nil],
+          description: "The network interface to which the route applies.",
+          desired_state: false # Has a partial default in the provider of eth0.
 
-      property :device, [String, nil],
-               description: "The network interface to which the route applies.",
-               desired_state: false # Has a partial default in the provider of eth0.
-
-      property :route_type, [Symbol, String],
-               description: "",
-               equal_to: [:host, :net], default: :host, desired_state: false
-    end
-  end
-end
+property :route_type, [Symbol, String],
+          description: "",
+          equal_to: [:host, :net], default: :host, desired_state: false
  
