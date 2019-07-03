@@ -27,9 +27,10 @@ property :device, [String, nil],
           description: "The network interface to which the route applies.", # Has a partial default in the action to get the first interface.
           default: nil 
 
-property :route_type, [Symbol, String],
+property :route_type, [Symbol, String, nil],
           description: "",
-          equal_to: [:host, :net], default: :host
+          equal_to: [:host, :net], 
+          default: nil
 
 property :persistent, [TrueClass, FalseClass],
           default: true 
@@ -81,12 +82,16 @@ action_class do
     if !new_resource.target.include? '/' # Checks if valid CIDR # TODO fix cidr check
       raise "IP #{new_resource.target} is not a valid CIDR map"
     end
+    # Check attributes that exist in the linux version
     if !new_resource.comment.nil? # Checks :comment as not supported
       warn 'The :comment attribute is not supported in the windows_route resource'
     end
     if !new_resource.netmask.nil? # Checks :netmask as not supported # TODO check if it can be supported
       warn 'The :netmask attribute is not supported in the windows_route resource'
     end    
+    if !new_resource.route_type.nil? # Checks :route_type as not supported # TODO check if it can be supported
+      warn 'The :route_type attribute is not supported in the windows_route resource'
+    end 
   end
 
   def create_guard_script # Returns script that will respond with a boolean value of whether or not a route exits for the target
