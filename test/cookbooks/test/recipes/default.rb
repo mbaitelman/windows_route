@@ -1,7 +1,7 @@
 
 windows_route '10.0.1.11/32' do
     gateway '0.0.0.0'
-    interface_alias 'Ethernet'
+    interface_alias node['if_name'] 
     comment 'a comment!'
     persistent false
 end
@@ -9,12 +9,12 @@ end
 windows_route '10.3.1.12/32' do
    gateway '0.0.0.0'
    metric 200
-   device 'Ethernet'
+   device node['if_name'] 
 end
 
 windows_route '10.3.1.12/32' do
-#    gateway '0.0.0.2'
-    device 'Ethernet'
+   gateway '0.0.0.2'
+    device node['if_name'] 
 end
 
 windows_route '10.2.1.10/32' do

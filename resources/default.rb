@@ -50,7 +50,7 @@ action :add do
   else 
     ifalias = new_resource.device
   end
-  code_script << " -InterfaceAlias #{ifalias}"
+  code_script << " -InterfaceAlias '#{ifalias}'"
   code_script << " -PolicyStore ActiveStore" if !new_resource.persistent
 
   guard_script = create_guard_script

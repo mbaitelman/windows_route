@@ -8,6 +8,7 @@ driver:
   skip_cost_warning: true #Skip the warnring that this may cost money
   spot_price: 0.06
   instance_type: t2.large
+  subnet_id: ENV['subnet']
   tags:
     Name: 'test-kitchen'
     Environment: 'test'
