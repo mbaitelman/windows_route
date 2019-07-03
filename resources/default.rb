@@ -5,14 +5,14 @@
 # default_action :add
 # allowed_actions :add, :delete
 
-description "Use the route resource to manage the system routing table in a Linux environment."
+description "Use the route resource to manage the system routing table in a Windows environment."
 
 property :target, String,
           description: "The IP address of the target route.",
           identity: true, name_property: true
 
 property :comment, [String, nil],
-          description: "Add a comment for the route."
+          description: "Add a comment for the route. Not supported in windows_route."
 
 property :metric, [Integer, nil],
           description: "The route metric value."
@@ -20,71 +20,76 @@ property :metric, [Integer, nil],
 property :netmask, [String, nil],
           description: "The decimal representation of the network mask. For example: 255.255.255.0."
 
-          #Interface?
 property :gateway, [String, nil],
           description: "The gateway for the route."
 
 property :device, [String, nil],
-          description: "The network interface to which the route applies.",
-          desired_state: false # Has a partial default in the provider of eth0.
+          description: "The network interface to which the route applies.", # Has a partial default in the action to get the first interface.
+          default: nil 
 
 property :route_type, [Symbol, String],
           description: "",
-          equal_to: [:host, :net], default: :host, desired_state: false
+          equal_to: [:host, :net], default: :host
+
+property :persistent, [TrueClass, FalseClass],
+          default: true 
+
+alias_method :interface_alias, :device
 
 action :add do 
   description ''
   validate_attributes
-  # route ADD 192.168.35.0 MASK 255.255.255.0 192.168.0.2
-  # route ADD destination_network MASK subnet_mask  gateway_ip metric_cost
 
-  code_script = " route -p add"
-  code_script << " #{new_resource.target} "
-  code_script << " MASK #{new_resource.netmask}" if new_resource.netmask
-  code_script << " #{new_resource.gateway}" if new_resource.gateway
-  code_script << " #{new_resource.metric}" if new_resource.metric
+  code_script = "New-NetRoute -AddressFamily IPv4 "
+  code_script << " -DestinationPrefix #{new_resource.target}"
+  code_script << " -RouteMetric #{new_resource.metric}" if new_resource.metric
+  code_script << " -NextHop #{new_resource.gateway}" if new_resource.gateway
+  if new_resource.device.nil?
+    ifalias = powershell_out!('((Get-NetIPInterface -AddressFamily IPv4)[0].ifAlias)').stdout.strip
+  else 
+    ifalias = new_resource.device
+  end
+  code_script << " -InterfaceAlias #{ifalias}"
+  code_script << " -PolicyStore ActiveStore" if !new_resource.persistent
 
-  guard_script = "[bool](Get-NetRoute -AddressFamily IPv4"
-  guard_script << " -DestinationPrefix #{new_resource.target}"
-  guard_script << "-ErrorAction Ignore)"
+  guard_script = create_guard_script
 
   powershell_script "setting route on #{new_resource.target} using (#{code_script})" do
-    guard_interpreter :powershell_script
-    convert_boolean_return true
     code code_script
-    only_if guard_script
-    #sensitive if new_resource.sensitive
+    not_if guard_script # Always add unless it already exists
   end
 end
 
 action :delete do 
   description ''
-  code_script = "Remove-NetRoute -DestinationPrefix #{new_resource.target}  -Confirm $false"
-
-  guard_script = "[bool](Get-NetRoute -AddressFamily IPv4"
-  guard_script << " -DestinationPrefix #{new_resource.target}"
-  guard_script << " -ErrorAction Ignore)"
+  validate_attributes
+  code_script = "Remove-NetRoute -DestinationPrefix #{new_resource.target} -Confirm:$false"
+  guard_script = create_guard_script
 
   powershell_script "Deleting route on #{new_resource.target} using (#{code_script})" do
-    guard_interpreter :powershell_script
-    convert_boolean_return true
     code code_script
-    not_if guard_script
-    #sensitive if new_resource.sensitive
+    only_if guard_script # Only delete if it already exists
   end
 end
 
 action_class do
   def validate_attributes 
     ipaddr = IPAddr.new new_resource.target
-    if !ipaddr.ipv4?()
+    if !ipaddr.ipv4?() #Checks IPv4
       raise 'IP is not IPv4 compliant'
     end
-    if new_resource.comment
-      raise 'The :comment attribute is not supported in the windows_route resource'
+    if !new_resource.target.include? '/' # Checks if valid CIDR # TODO fix cidr check
+      raise "IP #{new_resource.target} is not a valid CIDR map"
     end
+    if !new_resource.comment.nil? # Checks :comment as not supported
+      warn 'The :comment attribute is not supported in the windows_route resource'
+    end
+    if !new_resource.netmask.nil? # Checks :netmask as not supported # TODO check if it can be supported
+      warn 'The :netmask attribute is not supported in the windows_route resource'
+    end    
   end
-  def guard_script_shared
+
+  def create_guard_script # Returns script that will respond with a boolean value of whether or not a route exits for the target
     script = "[bool](Get-NetRoute -AddressFamily IPv4"
     script << " -DestinationPrefix #{new_resource.target}"
     script << " -ErrorAction Ignore)"
