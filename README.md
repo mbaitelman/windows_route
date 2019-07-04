@@ -21,28 +21,28 @@ The windows_route resource configures routes on Windows hosts by running the *-N
 
 #### Actions
 
-- `:add` - creates a Windows route
+- `:add` - adds a Windows route
 - `:delete` - deletes a Windows route
 
-#### properties
+#### Properties
 
 - `target`: CIDR of the IP address of the target. (Name property)
 - `metric`: An integer value which will be used to decide which route will be used, the system will use the lowest value.
 - `gateway`: The gateway for the route.
 - `device`: The Interface Alias to use. If a value is not given it will pull the first device. Can also be called with `interface_alias`
-- `persistent`: Whether or not the route should persist after reboots. defualt: true.
+- `persistent`: Whether or not the route should persist after reboots. default: true.
 
 There are a few attributes that are supported in the [linux route resource](https://docs.chef.io/resource_route.html) and are accepted here and will warn when used. See `:comment`, `:netmask` and `:route_type`
 
 #### Examples
 
 ```ruby
-    windows_route 'Adds a route for 10.0.1.11/32 via 0.0.0.0 over Ethernet' do
-        target  '10.0.1.11/32'
-        gateway '0.0.0.0'
-        device  'Ethernet' 
-        metric  200
-    end
+  windows_route 'Adds a route for 10.0.1.11/32 via 0.0.0.0 over Ethernet' do
+    target  '10.0.1.11/32'
+    gateway '0.0.0.0'
+    device  'Ethernet' 
+    metric  200
+  end
 ```
 
 ```ruby
